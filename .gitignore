@@ -1,5 +1,4 @@
-.vagrant/machines/k3s-server/virtualbox/private-key
-.vagrant/machines/k3s-worker-1/virtualbox/private-key
-.vagrant/machines/k3s-worker-2/virtualbox/private-key
+.vagrant/
+
 /fix-host-network.sh
 /keys.txt

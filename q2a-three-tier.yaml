@@ -1,0 +1,127 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: q2a-db-secrets
+type: Opaque
+stringData:
+  # Base64 encoded safely behind the scenes by Kubernetes
+  mysql-root-password: "SuperSecretRootPassword"
+  mysql-password: "Q2aDatabasePassword"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: q2a-mysql-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi  # Allocates a 5GB disk image via K3s default local storage provider
+---
+# =========================================================================
+# TIER 1: PERSISTENT DATABASE LAYER
+# =========================================================================
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: q2a-mysql
+spec:
+  serviceName: "q2a-mysql-internal"
+  replicas: 1
+  selector:
+    matchLabels:
+      tier: database
+  template:
+    metadata:
+      labels:
+        tier: database
+    spec:
+      containers:
+      - name: mysql
+        image: mysql:8.0
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: q2a-db-secrets
+              key: mysql-root-password
+        - name: MYSQL_DATABASE
+          value: q2a_db
+        - name: MYSQL_USER
+          value: q2a_user
+        - name: MYSQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: q2a-db-secrets
+              key: mysql-password
+        ports:
+        - containerPort: 3306
+          name: mysql
+        volumeMounts:
+        - name: mysql-persistent-storage
+          mountPath: /var/lib/mysql
+      volumes:
+      - name: mysql-persistent-storage
+        persistentVolumeClaim:
+          claimName: q2a-mysql-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: q2a-mysql-service
+spec:
+  ports:
+  - port: 3306
+  selector:
+    tier: database
+---
+# =========================================================================
+# TIER 2 & 3: APP COMPUTE POOL & CORE LOAD BALANCER
+# =========================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: q2a-app-deployment
+spec:
+  replicas: 3  # Scale horizontally across your worker-1 and worker-2 machines
+  selector:
+    matchLabels:
+      tier: frontend
+  template:
+    metadata:
+      labels:
+        tier: frontend
+    spec:
+      containers:
+      - name: q2a-container
+        image: carlosgerez/my-q2a:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 80
+        # Passing DB connection variables to your custom entrypoint.sh script
+        env:
+        - name: QA_MYSQL_HOST
+          value: "q2a-mysql-service"  # Internal DNS resolution automatically resolves this to the DB Pod
+        - name: QA_MYSQL_USER
+          value: q2a_user
+        - name: QA_MYSQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: q2a-db-secrets
+              key: mysql-password
+        - name: QA_MYSQL_NAME
+          value: q2a_db
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: q2a-loadbalancer
+spec:
+  type: NodePort  # Expose it cleanly onto your host-only adapter network interface
+  ports:
+  - port: 80
+    targetPort: 80
+    nodePort: 30080  # Accessible at any machine IP on port 30080
+  selector:
+    tier: frontend

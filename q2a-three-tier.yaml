@@ -1,127 +1,165 @@
-apiVersion: v1
-kind: Secret
-metadata:
-  name: q2a-db-secrets
-type: Opaque
-stringData:
-  # Base64 encoded safely behind the scenes by Kubernetes
-  mysql-root-password: "SuperSecretRootPassword"
-  mysql-password: "Q2aDatabasePassword"
----
+
+# =========================================================================
+# TIER 1: INTERNAL DATA SUITE (MySQL & Redis) - Internal Network Zone
+# =========================================================================
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: q2a-mysql-pvc
+  name: mysql-data-pvc
 spec:
   accessModes:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 5Gi  # Allocates a 5GB disk image via K3s default local storage provider
+      storage: 5Gi
 ---
-# =========================================================================
-# TIER 1: PERSISTENT DATABASE LAYER
-# =========================================================================
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: q2a-mysql
+  name: internal-db
 spec:
-  serviceName: "q2a-mysql-internal"
+  serviceName: "mysql-internal"
   replicas: 1
   selector:
     matchLabels:
-      tier: database
+      app: mysql
   template:
     metadata:
       labels:
-        tier: database
+        app: mysql
     spec:
       containers:
       - name: mysql
-        image: mysql:8.0
+        image: mysql:9.6.0  # Kept exactly to match your testing spec
         env:
         - name: MYSQL_ROOT_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: q2a-db-secrets
-              key: mysql-root-password
+              name: q2a-secrets
+              key: db-root-password
         - name: MYSQL_DATABASE
-          value: q2a_db
+          value: q2a
         - name: MYSQL_USER
-          value: q2a_user
+          value: q2auser
         - name: MYSQL_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: q2a-db-secrets
-              key: mysql-password
+              name: q2a-secrets
+              key: db-password
         ports:
         - containerPort: 3306
           name: mysql
         volumeMounts:
-        - name: mysql-persistent-storage
+        - name: db-data
           mountPath: /var/lib/mysql
       volumes:
-      - name: mysql-persistent-storage
+      - name: db-data
         persistentVolumeClaim:
-          claimName: q2a-mysql-pvc
+          claimName: mysql-data-pvc
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: q2a-mysql-service
+  name: db  # Matches the DB_HOST string exactly
 spec:
   ports:
   - port: 3306
   selector:
-    tier: database
+    app: mysql
 ---
-# =========================================================================
-# TIER 2 & 3: APP COMPUTE POOL & CORE LOAD BALANCER
-# =========================================================================
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: q2a-app-deployment
+  name: internal-redis
 spec:
-  replicas: 3  # Scale horizontally across your worker-1 and worker-2 machines
+  replicas: 1
   selector:
     matchLabels:
-      tier: frontend
+      app: redis
   template:
     metadata:
       labels:
-        tier: frontend
+        app: redis
     spec:
       containers:
-      - name: q2a-container
-        image: carlosgerez/my-q2a:latest
-        imagePullPolicy: Always
+      - name: redis
+        image: redis:7
         ports:
-        - containerPort: 80
-        # Passing DB connection variables to your custom entrypoint.sh script
-        env:
-        - name: QA_MYSQL_HOST
-          value: "q2a-mysql-service"  # Internal DNS resolution automatically resolves this to the DB Pod
-        - name: QA_MYSQL_USER
-          value: q2a_user
-        - name: QA_MYSQL_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: q2a-db-secrets
-              key: mysql-password
-        - name: QA_MYSQL_NAME
-          value: q2a_db
+        - containerPort: 6369
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: q2a-loadbalancer
+  name: redis  # Matches the REDIS_HOST string exactly
 spec:
-  type: NodePort  # Expose it cleanly onto your host-only adapter network interface
+  ports:
+  - port: 6379
+  selector:
+    app: redis
+---
+# =========================================================================
+# TIER 2: COMPUTE COMPUTE POOL (Q2A Replicas) - DMZ Zone
+# =========================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: q2a-app
+spec:
+  replicas: 5  # Replicates your dynamic '--scale q2a=5' testing scenario
+  selector:
+    matchLabels:
+      app: q2a-engine
+  template:
+    metadata:
+      labels:
+        app: q2a-engine
+    spec:
+      containers:
+      - name: q2a
+        image: carlosgerez/my-q2a:1.3  # Running your precise public image version
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 80
+        env:
+        - name: DB_HOST
+          value: "db"  # Resolves automatically to the MySQL Service DNS internally
+        - name: DB_NAME
+          value: q2a
+        - name: DB_USER
+          value: q2auser
+        - name: DB_PASS
+          valueFrom:
+            secretKeyRef:
+              name: q2a-secrets
+              key: db-password
+        - name: REDIS_HOST
+          value: "redis"  # Resolves automatically to the Redis Service DNS internally
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: q2a-internal-service
+spec:
   ports:
   - port: 80
     targetPort: 80
-    nodePort: 30080  # Accessible at any machine IP on port 30080
   selector:
-    tier: frontend
+    app: q2a-engine
+---
+# =========================================================================
+# TIER 3: REVERSE PROXY / INGRESS CONTROL - Public Egress Zone
+# =========================================================================
+# Instead of configuring a manual Nginx container, K3s includes Traefik out-of-the-box.
+# But since you have a specific NodePort scheme, we will expose the pool via a LoadBalancer service
+apiVersion: v1
+kind: Service
+metadata:
+  name: public-proxy-service
+spec:
+  type: NodePort
+  ports:
+  - port: 80         # Internal cluster port
+    targetPort: 80   # Forwards to your Q2A application pods
+    nodePort: 30080  # Accessible directly from your Kali host-only browser
+  selector:
+    app: q2a-engine

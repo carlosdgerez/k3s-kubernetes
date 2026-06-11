@@ -6,4 +6,6 @@
 /fix-host-network.sh
 /keys.txt
 # Ignore local Kubernetes cluster credentials
-k3s-config.yaml
+/k3s-config.yaml
+# ignore secrets
+/secrets.yaml

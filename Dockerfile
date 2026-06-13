@@ -1,12 +1,14 @@
 FROM php:8.1-apache
 
-# Combine system updates and utilities to keep image layers clean
+# Add libssl-dev and default-libmysqlclient-dev to support secure RSA handshakes
 RUN apt-get update && apt-get install -y \
     unzip \
     curl \
+    libssl-dev \
+    default-libmysqlclient-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Install native extensions needed by Q2A
+# Now when mysqli compiles, it will hook into the libraries needed for caching_sha2_password
 RUN docker-php-ext-install mysqli pdo pdo_mysql
 
 # Enable Apache mod_rewrite

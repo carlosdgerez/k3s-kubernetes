@@ -1,3 +1,31 @@
+# --- HOST COMPATIBILITY PATCH ---
+# Fixes a known Kali Linux bug where VBoxManage outputs a libxml compilation warning.
+# This warning misleads Vagrant into thinking the interface name contains the warning text.
+if Dir.exist?('/etc/apt') # Target Linux hosts specifically
+  require 'vagrant/util/subprocess'
+  module Vagrant
+    module Util
+      class Subprocess
+        class << self
+          alias_method :original_execute, :execute
+          def execute(*command, &block)
+            result = original_execute(*command, &block)
+            if result && result.stdout
+              # Clean the standard output stream of the libxml noise before returning it to Vagrant
+              result.stdout.gsub!(/^Warning: program compiled against libxml.*\n/, '')
+            end
+            result
+          end
+        end
+      end
+    end
+  end
+end
+# ---------------------------------
+
+
+
+
 Vagrant.configure("2") do |config|
   config.vm.box = "bento/ubuntu-22.04"
 

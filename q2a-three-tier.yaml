@@ -120,24 +120,24 @@ spec:
     spec:
       containers:
       - name: q2a
-        image: carlosgerez/my-q2a:1.3  # Running your precise public image version
+        image: carlosgerez/my-q2a:1.4  # Running your precise public image version
         imagePullPolicy: Always
         ports:
         - containerPort: 80
         env:
-        - name: DB_HOST
-          value: "db"  # Resolves automatically to the MySQL Service DNS internally
-        - name: DB_NAME
-          value: q2a
-        - name: DB_USER
-          value: q2auser
-        - name: DB_PASS
+        - name: QA_MYSQL_HOST
+          value: "db"
+        - name: QA_MYSQL_DATABASE
+          value: "q2a"
+        - name: QA_MYSQL_USER
+          value: "q2auser"
+        - name: QA_MYSQL_PASSWORD
           valueFrom:
             secretKeyRef:
               name: q2a-secrets
               key: db-password
         - name: REDIS_HOST
-          value: "redis"  # Resolves automatically to the Redis Service DNS internally
+          value: "redis" # Resolves automatically to the Redis Service DNS internally
 ---
 apiVersion: v1
 kind: Service

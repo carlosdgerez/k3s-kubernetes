@@ -118,26 +118,28 @@ spec:
       labels:
         app: q2a-engine
     spec:
-      containers:
-      - name: q2a
-        image: carlosgerez/my-q2a:1.4  # Running your precise public image version
-        imagePullPolicy: Always
-        ports:
-        - containerPort: 80
-        env:
-        - name: QA_MYSQL_HOST
-          value: "db"
-        - name: QA_MYSQL_DATABASE
-          value: "q2a"
-        - name: QA_MYSQL_USER
-          value: "q2auser"
-        - name: QA_MYSQL_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: q2a-secrets
-              key: db-password
-        - name: REDIS_HOST
-          value: "redis" # Resolves automatically to the Redis Service DNS internally
+  containers:
+  - name: q2a
+    image: carlosgerez/my-q2a:1.6
+    imagePullPolicy: Always
+    ports:
+    - containerPort: 80
+    env:
+    - name: db
+      value: "db.default.svc.cluster.local"
+    - name: QA_MYSQL_HOST
+      value: "db.default.svc.cluster.local"  # <-- Pointing both to the reliable FQDN
+    - name: QA_MYSQL_DATABASE
+      value: "q2a"
+    - name: QA_MYSQL_USER
+      value: "q2auser"
+    - name: QA_MYSQL_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: q2a-secrets
+          key: db-password
+    - name: REDIS_HOST
+      value: "redis"  # Resolves automatically to the Redis Service DNS internally
 ---
 apiVersion: v1
 kind: Service

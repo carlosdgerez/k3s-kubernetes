@@ -1,3 +1,5 @@
+
+## Components
 <p align="center">
   <img src="images/Diagram.png" alt="Architecture Diagram" width="100%">
 </p>
@@ -10,7 +12,7 @@ Cloud-Native Three-Tier Web Application Deployment on K3s
 Kubernetes • K3s • Docker • Redis • MySQL • Vagrant • VirtualBox
 </p>
 
-## Components
+
 
 
 

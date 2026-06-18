@@ -134,7 +134,12 @@ spec:
               name: q2a-secrets
               key: db-password
         - name: REDIS_HOST
-          value: "redis"  
+          value: "redis" 
+         # ─── SECURE HANDLING OFF SESSIONS LOGOUTS WITH REDIS───
+        - name: PHP_VALUE
+          value: |
+            session.save_handler = redis
+            session.save_path = "tcp://redis:6379"  
 ---
 apiVersion: v1
 kind: Service
@@ -156,6 +161,10 @@ metadata:
   name: public-proxy-service
 spec:
   type: NodePort
+  sessionAffinity: ClientIP     # ◄── Enforces sticky sessions based on browser source IP
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 10800     # ◄── Keeps the mapping cached in the kernel for 3 hours
   ports:
   - port: 80         
     targetPort: 80   

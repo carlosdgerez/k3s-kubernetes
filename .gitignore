@@ -10,4 +10,4 @@
 # ignore secrets
 /secrets.yaml
 # ignore token
-/node-token 
+node-token 

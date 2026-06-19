@@ -9,3 +9,5 @@
 /k3s-config.yaml
 # ignore secrets
 /secrets.yaml
+# ignore token
+/node-token 

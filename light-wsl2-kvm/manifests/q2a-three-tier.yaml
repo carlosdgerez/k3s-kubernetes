@@ -1,0 +1,173 @@
+# =========================================================================
+# TIER 1: INTERNAL DATA SUITE (MySQL & Redis) - Internal Network Zone
+# =========================================================================
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-data-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: internal-db
+spec:
+  serviceName: "mysql-internal"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysql
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+      - name: mysql
+        image: mysql:9.6.0  # Custom image with your pre-baked native auth patch
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: q2a-secrets
+              key: db-root-password
+        - name: MYSQL_DATABASE
+          value: q2a
+        - name: MYSQL_USER
+          value: q2auser
+        - name: MYSQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: q2a-secrets
+              key: db-password
+        ports:
+        - containerPort: 3306
+          name: mysql
+        volumeMounts:
+        - name: db-data
+          mountPath: /var/lib/mysql
+      volumes:
+      - name: db-data
+        persistentVolumeClaim:
+          claimName: mysql-data-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: db  
+spec:
+  ports:
+  - port: 3306
+  selector:
+    app: mysql
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: internal-redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+      - name: redis
+        image: redis:7
+        ports:
+        - containerPort: 6379 # Standardized to match service mapping
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis  
+spec:
+  ports:
+  - port: 6379
+  selector:
+    app: redis
+---
+# =========================================================================
+# TIER 2: COMPUTE COMPUTE POOL (Q2A Replicas) - DMZ Zone
+# =========================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: q2a-app
+spec:
+  replicas: 5  
+  selector:
+    matchLabels:
+      app: q2a-engine
+  template:
+    metadata:
+      labels:
+        app: q2a-engine
+    spec:
+      containers: # FIXED: Pushed right by 4 spaces to align properly under template.spec
+      - name: q2a
+        image: carlosgerez/my-q2a:1.6 # Custom image with your embedded DNS wrapper
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 80
+        env:
+        - name: db
+          value: "db.default.svc.cluster.local"
+        - name: QA_MYSQL_HOST
+          value: "db.default.svc.cluster.local"  
+        - name: QA_MYSQL_DATABASE
+          value: "q2a"
+        - name: QA_MYSQL_USER
+          value: "q2auser"
+        - name: QA_MYSQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: q2a-secrets
+              key: db-password
+        - name: REDIS_HOST
+          value: "redis" 
+         # ─── SECURE HANDLING OFF SESSIONS LOGOUTS WITH REDIS───
+        - name: PHP_VALUE
+          value: |
+            session.save_handler = redis
+            session.save_path = "tcp://redis:6379"  
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: q2a-internal-service
+spec:
+  ports:
+  - port: 80
+    targetPort: 80
+  selector:
+    app: q2a-engine
+---
+# =========================================================================
+# TIER 3: REVERSE PROXY / INGRESS CONTROL - Public Egress Zone
+# =========================================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: public-proxy-service
+spec:
+  type: NodePort
+  sessionAffinity: ClientIP     # ◄── Enforces sticky sessions based on browser source IP
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 10800     # ◄── Keeps the mapping cached in the kernel for 3 hours
+  ports:
+  - port: 80         
+    targetPort: 80   
+    nodePort: 30080  
+  selector:
+    app: q2a-engine

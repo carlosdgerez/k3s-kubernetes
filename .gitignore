@@ -16,5 +16,5 @@ node-token
 # Ignore keys and certificates from the lightweight Kubernetes distribution (k3s)
 
 **/light-wsl2-kvm/.vagrant/machines/**/private_key
-**/light-wsl2-kvm/manifests/kubeconfig.yaml
+**/light-wsl2-kvm/kubeconfig.yaml
 **/light-wsl2-kvm/manifests/secrets.yaml

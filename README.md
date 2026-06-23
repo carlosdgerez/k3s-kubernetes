@@ -3,12 +3,12 @@
 <p align="center">
   <img src="images/Diagram.png" alt="Architecture Diagram" width="100%">
 </p>
-er Web Application Deployment on K3s
+Cloud-Native Three-Tier Web Application Deployment on K3s
 </h1>
 
 <p align="center">
 <h1 align="center">
-Cloud-Native Three-Ti
+
 Kubernetes • K3s • Docker • Redis • MySQL • Vagrant • VirtualBox
 </p>
 
@@ -20,8 +20,8 @@ Kubernetes • K3s • Docker • Redis • MySQL • Vagrant • VirtualBox
 
 
 
-
-A cloud-native deployment of the Question2Answer (Q2A) platform running on a multi-node K3s Kubernetes cluster provisioned with Vagrant and VirtualBox.
+<h4>
+A cloud-native deployment of the Question2Answer (Q2A) platform running on a multi-node K3s Kubernetes cluster provisioned with Vagrant and VirtualBox.</h4>
 
 This project demonstrates infrastructure automation, containerization, Kubernetes orchestration, persistent storage management, distributed session handling, and scalable application deployment within a locally hosted Kubernetes environment.
 

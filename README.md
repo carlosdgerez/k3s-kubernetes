@@ -474,6 +474,30 @@ Redis + MySQL Backend Services
 ```
 
 This will provide a fully cloud-native bare-metal deployment model without requiring local forwarding utilities.
+ 
+```text
+/k3s-kubernetes/
+├── Vagrantfile                # Deploys 3 KVM virtual cluster machines
+├── kubeconfig.yaml            # Secret credentials (ignored by Git)
+├── setup-network-route.ps1     # ◄── NEW: Automates the Windows-to-KVM networking bridge
+└── manifests/
+            ├── 00-storage-provisioner.yaml  # Dynamic storage provisioning
+            ├── 01-secrets.yaml              # Application secrets and credentials
+            ├── 02-q2a-three-tier.yaml       # MySQL, Redis, and Q2A workloads 
+            ├── 03-metallb-core.yaml         # Metallb core
+            └── 04-metallb-config.yaml       # Metallb configuration workloads                
+
+
+```
+### 🌐 Accessing the MetalLB LoadBalancer from Windows
+
+Because WSL2 updates its internal adapter IP layout on system reboots, the network path between your Windows host and the internal KVM network (`192.168.100.x`) must be linked dynamically.
+
+Run the included tracking script from an **Administrator PowerShell** terminal whenever you initialize the lab environment:
+
+```powershell
+.\setup-network-route.ps1
+```
 
 
 ## Future Improvements

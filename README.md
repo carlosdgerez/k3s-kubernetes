@@ -499,7 +499,45 @@ Run the included tracking script from an **Administrator PowerShell** terminal w
 .\setup-network-route.ps1
 ```
 
+The nested environment: 
 
+```text
++-------------------------------------------------------------------------------+
+| WINDOWS 11 HOST (Your Web Browser)                                            |
+|   |  Routes traffic via `setup-network-route.ps1`                             |
+|   v                                                                           |
+| +---------------------------------------------------------------------------+ |
+| | WSL2 UNMANAGED BOUNDARY (Ubuntu Host Instance)                            | |
+| |   |  Acts as the primary bridge gateway into the hypervisor               | |
+| |   v                                                                       | |
+| | +-----------------------------------------------------------------------+ | |
+| | | KVM / LIBVIRT LAYER (QEMU Hypervisor inside WSL)                      | | |
+| | |   |  Private Lab Bridge (`virbrX`) -> Subnet: 192.168.100.0/24        | | |
+| | |   v                                                                   | | |
+| | |                                                                       | | |
+| | |  ===================[ METALLB LAYER (L2 DOMAIN) ]===================  | | |
+| | |  | MetalLB acts as a virtual distributed switch across all nodes.  |  | | |
+| | |  | It listens on the 192.168.100.x fabric and answers ARP requests |  | | |
+| | |  | for your external cluster IP pool (e.g., 192.168.100.200).     |  | | |
+| | |  ===================================================================  | | |
+| | |       |                       |                       |               | | |
+| | |       v                       v                       v               | | |
+| | | +------------------+    +------------------+    +------------------+  | | |
+| | | | k3s-server       |    | k3s-agent-1      |    | k3s-agent-2      |  | | |
+| | | | (192.168.100.10) |    | (192.168.100.11) |    | (192.168.100.12) |  | | |
+| | | +------------------+    +------------------+    +------------------+  | | |
+| | | | [Speaker Pod]    |    | [Speaker Pod]    |    | [Speaker Pod]    |  | | |
+| | | |  (Running)       |    |  (STUCK: Pulling)|    |  (STUCK: Pulling)|  | | |
+| | | |        |         |    |                  |    |                  |  | | |
+| | | |        v         |    |                  |    |                  |  | | |
+| | | |  kube-ipvs0      |    |                  |    |                  |  | | |
+| | | |  Holds:          |    |                  |    |                  |  | | |
+| | | |  .100.200 (✅)   |    |                  |    |                  |  | | |
+| | | +------------------+    +------------------+    +------------------+  | | |
+| | +-----------------------------------------------------------------------+ | |
+| +---------------------------------------------------------------------------+ |
++-------------------------------------------------------------------------------+
+```
 ## Future Improvements
 
 - Ingress Controller

@@ -1,3 +1,26 @@
+## 📌 Table of Contents
+
+* [🚀 Getting Started](#-getting-started)
+  * [📋 Prerequisites](#-prerequisites)
+  * [🛠️ Spinning Up the Lab](#️-spinning-up-the-lab)
+  * [🌐 Accessing the Application](#-accessing-the-application)
+  * [🧹 Tearing Down the Lab](#-tearing-down-the-lab)
+* [🚀 Automated Multi-Tier Deployment & Troubleshooting](#-automated-multi-tier-deployment--troubleshooting)
+  * [Light WSL2-KVM Architecture](#light-wsl2-kvm-architecture)
+  * [Manifest Architecture & Single-Command Deployment](#manifest-architecture--single-command-deployment)
+* [🔧 Troubleshooting & Operational Lessons Learned](#-troubleshooting--operational-lessons-learned)
+  * [1. Dynamic Storage Provisioning for Stateful Workloads](#1-dynamic-storage-provisioning-for-stateful-workloads)
+  * [2. Service Discovery & Database Connectivity Validation](#2-service-discovery--database-connectivity-validation)
+* [🌐 Development Access vs Production Networking](#development-access-vs-production-networking)
+* [🎯 Next Infrastructure Milestone](#-next-infrastructure-milestone)
+  * [🌐 WSL2 & KVM Ingress Gateway (NGINX Reverse Proxy Architecture)](#-wsl2--kvm-ingress-gateway-nginx-reverse-proxy-architecture)
+  * [⚙️ Automation & Deployment Lifecycle](#️-automation--deployment-lifecycle)
+  * [🎯 Verification](#-verification)
+
+---
+
+
+
 ## 🚀 Getting Started
 
 This repository provides a fully automated, lightweight 3-tier Kubernetes laboratory environment running **K3s** across local **WSL2** and **KVM/Libvirt** virtual machines. 

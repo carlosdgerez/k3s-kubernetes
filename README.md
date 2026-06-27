@@ -38,7 +38,7 @@ This project demonstrates infrastructure automation, containerization, Kubernete
 - [Deployment](#deployment)
 - [Repository Structure](#repository-structure)
 - [Issues solved](#the-multi-node-network-isolation-challenge-the-host-fix-script)
-- [Lighter Version for WSL2 in Windows](./light-wsl2-kvm/README-SMALL-LAB.md#-getting-started)
+- [Lighter Version for WSL2 in Windows](./light-wsl2-kvm/README-SMALL-LAB.md#-table-of-contents)
 - [Future Improvements](#future-improvements)
 
 ---

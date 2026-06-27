@@ -243,7 +243,7 @@ This confirms successful service discovery and TCP connectivity between the appl
 
 ---
 
-# 🌐 Development Access vs Production Networking
+### 🌐 Development Access vs Production Networking
 
 During development, nested network isolation between Windows, WSL2, and the private KVM bridge network required temporary port forwarding.
 

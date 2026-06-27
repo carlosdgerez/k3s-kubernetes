@@ -39,7 +39,7 @@ sudo usermod -aG kvm $USER
 # 2. Refresh your current terminal session groups immediately
 newgrp libvirt
 ```
-🛠️ Spinning Up the Lab
+### 🛠️ Spinning Up the Lab
 
 We have unified the entire infrastructure lifecycle, secure credential synchronization, and application manifest deployment into a single startup script.
 

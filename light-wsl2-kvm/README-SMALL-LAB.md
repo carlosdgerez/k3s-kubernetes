@@ -11,7 +11,7 @@
 * [🔧 Troubleshooting & Operational Lessons Learned](#-troubleshooting--operational-lessons-learned)
   * [1. Dynamic Storage Provisioning for Stateful Workloads](#1-dynamic-storage-provisioning-for-stateful-workloads)
   * [2. Service Discovery & Database Connectivity Validation](#2-service-discovery--database-connectivity-validation)
-* [🌐 Development Access vs Production Networking](#development-access-vs-production-networking)
+* [🌐 Development Access vs Production Networking](#-development-access-vs-production-networking)
 * [🎯 Next Infrastructure Milestone](#-next-infrastructure-milestone)
   * [🌐 WSL2 & KVM Ingress Gateway (NGINX Reverse Proxy Architecture)](#-wsl2--kvm-ingress-gateway-nginx-reverse-proxy-architecture)
   * [⚙️ Automation & Deployment Lifecycle](#️-automation--deployment-lifecycle)

@@ -53,7 +53,7 @@ What this automated pipeline does for you:
 2. `./scripts/verify-lab.sh` Securely extracts the fresh cluster authentication tokens from the master VM, updates your local `~/.kubeconfig.yaml` , and realigns the Kubernetes API endpoint.
 3. `kubectl apply -f manifests/` — Automatically deploys your storage provisioners, local cluster secrets, high-availability deployments, and MetalLB configurations in their exact sequence. The last lines will trow an error the first time it runs because the pods are not yet ready to receive their ip addresses. Wait one minute and run again `kubectl apply -f manifests/`. This second time will not trow errors. 
 
-🌐 Accessing the Application
+### 🌐 Accessing the Application
 
 Once the startup script confirms all pods have transitioned to a 1/1 Running state, open your Windows browser and navigate to the application installation and initialization path:
 ```text

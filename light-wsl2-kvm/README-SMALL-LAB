@@ -1,0 +1,49 @@
+## 🚀 Getting Started
+
+This repository provides a fully automated, lightweight 3-tier Kubernetes laboratory environment running **K3s** across local **WSL2** and **KVM/Libvirt** virtual machines. 
+
+The infrastructure features a dedicated NGINX host-routing bridge to seamlessly handle asymmetric Layer 4 traffic routing between Windows and the virtualized cluster network, alongside a MetalLB Layer 2 load balancer.
+
+### 📋 Prerequisites
+
+Before spinning up the cluster, ensure your local WSL2 Ubuntu terminal session has proper administrative permissions to interact with the local virtualization daemon:
+
+```bash
+# 1. Add your user account to the virtualization security groups
+sudo usermod -aG libvirt $USER
+sudo usermod -aG kvm $USER
+
+# 2. Refresh your current terminal session groups immediately
+newgrp libvirt
+```
+🛠️ Spinning Up the Lab
+
+We have unified the entire infrastructure lifecycle, secure credential synchronization, and application manifest deployment into a single startup script.
+
+To stand up the database, Redis caching layer, and Question2Answer (Q2A) application from a cold start, run the following command from the root of this directory:
+
+```bash
+./start-lab.sh
+```
+What this automated pipeline does for you:
+1. `vagrant up` — Provisions the virtual master (k3s-server) and worker nodes (k3s-agent-1, k3s-agent-2), handles local bridge bindings, and runs host-level network optimization scripts.
+2. `./scripts/verify-lab.sh` Securely extracts the fresh cluster authentication tokens from the master VM, updates your local `~/.kubeconfig.yaml` , and realigns the Kubernetes API endpoint.
+3. `kubectl apply -f manifests/` — Automatically deploys your storage provisioners, local cluster secrets, high-availability deployments, and MetalLB configurations in their exact sequence. The last lines will trow an error the first time it runs because the pods are not yet ready to receive their ip addresses. Wait one minute and run again `kubectl apply -f manifests/`. This second time will not trow errors. 
+
+🌐 Accessing the Application
+
+Once the startup script confirms all pods have transitioned to a 1/1 Running state, open your Windows browser and navigate to the application installation and initialization path:
+```text
+http://172.29.15.185:8080
+```
+
+
+
+
+### 🧹 Tearing Down the Lab
+
+To completely stop the virtual machines and wipe out all temporary local runtime states without losing your project configurations, run:
+
+```bash
+vagrant destroy -f
+```
